@@ -1,0 +1,32 @@
+Step 1: Create the Actor and Critic Classes
+
+Both the Actor and Critic Classes are their own Nueral Nets with their own inputs and outputs
+
+Actor
+=====
+Input: Current State
+Output: Recommended Actions
+
+Critic
+======
+Input: Current State + Action
+Output: Q-value (how good that action was for that state)
+
+
+Step 2: Trials
+
+- Using the current Actor generate random walks through the environment.
+- Record for each step the state, action, and reward
+- Once a batch of N records have been generated move on to updating the Actor and Critic classes
+
+Step 3: Update
+
+First update the critic class based on the bellman equation
+	Q_{state,action} = R + \gamma * Critic(State,Action)
+
+Critic Should give the appropriate Q-value for each state-action input pair
+
+Second update the actor class based on the loss of the Critic class update
+
+Step 4:
+Use the soft update function which supposedly statabilizes training.
