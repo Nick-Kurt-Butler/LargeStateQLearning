@@ -64,7 +64,6 @@ class Engine:
 			metrics['actor_loss'].append(al)
 			metrics['critic_loss'].append(cl)
 			print(f"Epoch: {t}, Avg Reward:{round(np.sum(rewards)/(np.sum(dones)+1),2)}, Actor Loss:{al}, Critic Loss:{cl}")
-            #return states,actions,next_states,dones,rewards
 
 		return metrics
 
@@ -75,9 +74,9 @@ class Engine:
 		l = len(states)
 		for t in range(trials):
 			states = states[np.random.randint(l,size=batch_size)]
-			probs = np.random.rand(batch_size,9)
-			probs/probs.sum(axis=1)[:,None]
-			actions = np.argmax(probs,axis=1)
+			probs = np.zeros([batch_size,9])
+			actions = np.random.randint(9,size=batch_size)
+			probs[np.arange(batch_size),actions] = 1
 			next_states = self.Env.step(states,actions)
 			rewards = self.Env.reward(states,actions,next_states)
 			dones = self.Env.done(next_states)

@@ -65,7 +65,6 @@ class DDPGAgent:
 			target_actions = self.target_actor(next_state)
 			target_critic_value = tf.squeeze(self.target_critic(next_state, target_actions), 1)
 			y = reward + self.gamma * target_critic_value * (1-done)
-			#y = tf.math.add(reward,tf.math.multiply(tf.math.multiply(self.gamma,target_critic_value),(1-done)))
 			critic_value = tf.squeeze(self.critic(state, action), 1)
 			critic_loss = tf.keras.losses.MSE(y, critic_value)
 
