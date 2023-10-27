@@ -69,19 +69,23 @@ class Engine:
 		return metrics
 
 
-	def random_train(self, num_trials, state_generator, explore_prob):
+	def explore_train(self, batch_size, trials):
 		metrics = {'reward':[],'actor_loss':[],'critic_loss':[]}
-		for trial in range(num_trials):
-			states = state_generator()
-			states = states[~self.Env.done(states)]
-			actions = np.array(self.Agent.get_action(states))
-			actions = self.explore(actions,explore_prob)
+		states = self.Env.find_valid_starts()
+		l = len(states)
+		for t in range(trials):
+			states = states[np.random.randint(l,size=batch_size)]
+			probs = np.random.rand(batch_size,9)
+			probs/probs.sum(axis=1)[:,None]
+			actions = np.argmax(probs,axis=1)
 			next_states = self.Env.step(states,actions)
-			rewards = self.Env.reward(next_states)
-			al,cl = self.Agent.update(states, actions, next_states, rewards)
+			rewards = self.Env.reward(states,actions,next_states)
+			dones = self.Env.done(next_states)
+			al,cl = self.Agent.update(states, probs, next_states, rewards, dones)
 			metrics['reward'].append(np.sum(rewards))
 			metrics['actor_loss'].append(al)
 			metrics['critic_loss'].append(cl)
+			print(f"Epoch: {t}, Avg Reward:{round(np.sum(rewards)/(np.sum(dones)+1),2)}, Actor Loss:{al}, Critic Loss:{cl}")
 		return metrics
 
 	def explore(self,actions,explore_prob):

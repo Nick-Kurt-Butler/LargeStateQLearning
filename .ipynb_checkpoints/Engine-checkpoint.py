@@ -69,10 +69,11 @@ class Engine:
 		return metrics
 
 
-	def random_train(self, num_trials, state_generator, explore_prob):
+	def random_train(self, num_trials, batch_size, explore_prob):
 		metrics = {'reward':[],'actor_loss':[],'critic_loss':[]}
-		for trial in range(num_trials):
-			states = state_generator()
+		states = self.Env.find_valid_states()
+        for trial in range(num_trials):
+
 			states = states[~self.Env.done(states)]
 			actions = np.array(self.Agent.get_action(states))
 			actions = self.explore(actions,explore_prob)

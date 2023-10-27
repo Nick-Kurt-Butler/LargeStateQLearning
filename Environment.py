@@ -38,7 +38,7 @@ class Environment:
 			for j in range(self.size[1]):
 				if not self.done_f([i,j,0,0]):
 					starts.append((i,j,0,0))
-		return starts
+		return np.array(starts)
 
 	def step_f(self,state_action):
 		px,py,vx,vy,a = state_action
