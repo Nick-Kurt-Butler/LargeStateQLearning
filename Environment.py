@@ -2,75 +2,172 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class Environment:
-	def __init__(self,size, goal_reward, punishment, time_penalty, outOfBoundsList, goalList):
-		self.size = size # size of the map in length units
-		self.goal_reward = goal_reward # reward for reaching goal
-		self.punishment = punishment # punishment for going out of bounds
-		self.time_penalty = time_penalty # punishment for each time step completed
-		self.outOfBoundsList = outOfBoundsList
-		self.goalList = goalList
+    def __init__(self,size, goal_reward, fail_penalty, time_penalty, outOfBoundsList, goalList):
+        self.size = size # size of the map in length units
+        self.goal_reward  = goal_reward # reward for reaching goal
+        self.fail_penalty = fail_penalty # punishment for going out of bounds
+        self.time_penalty = time_penalty # punishment for each time step completed
+        self.outOfBoundsList = outOfBoundsList
+        self.goalList = goalList
 
-	def goal_reached(self,state):
-		px,py,vx,vy = state
-		#if (px,py) in self.goalList and vx==0 and vy==0: return True
-		if (px,py) in self.goalList: return True
-		else: return False
+    def display(self):
+        """
+        Display Map
+        """
+        sx,sy = self.size
+        env = np.ones([sx,sy,3]) # White
 
-	def failure(self,state):
-		px,py,vx,vy = state
-		if (px < 0): return True
-		elif (py < 0): return True
-		elif (px >= self.size[0]): return True
-		elif (py >= self.size[1]): return True
-		elif (px,py) in self.outOfBoundsList: return True
-		else: return False
+        for (x,y) in [[x,y] for x in range(sx) for y in range(sy)]:
+            if (x,y) in self.goalList:
+                env[x,y] = [0,1,0] # Green
+            elif (x,y) in self.outOfBoundsList:
+                env[x,y] = [0,0,0] # Black
 
-	def done_f(self,state):
-		if self.goal_reached(state) or self.failure(state): return True
-		else:return False
+        img = plt.imshow(np.swapaxes(env,0,1)[::-1], extent = [0,self.size[0],0,self.size[1]])
+        img.set_cmap('hot')
+        plt.xlim(0,self.size[0])
+        plt.ylim(0,self.size[1])
+        plt.axis('off')
+        for i in range(sx+1):
+            plt.axvline(i)
+        for i in range(sy+1):
+            plt.axhline(i)
+        return img
 
-	def done(self,state):
-		return np.apply_along_axis(self.done_f,1,state)
+    def valid_states(self):
+        """
+        Find all potential starting states in environment
+        """
+        pos = [[x,y] for x in range(self.size[0]) for y in range(self.size[1]) if (x,y) not in self.outOfBoundsList+self.goalList]
+        vel = np.zeros([len(pos),1])
+        return np.concatenate([pos,vel,vel],axis=1)
 
-	def find_valid_starts(self):
-		starts = []
-		for i in range(self.size[0]):
-			for j in range(self.size[1]):
-				if not self.done_f([i,j,0,0]):
-					starts.append((i,j,0,0))
-		return np.array(starts)
+    def step(self,state,action):
+        """
+        Update Agent in Environment
 
-	def step_f(self,state_action):
-		px,py,vx,vy,a = state_action
-		ax = a//3 - 1
-		ay = a% 3 - 1
-		return [px+vx+ax,py+vy+ay,vx+ax,vy+ay]
-    
-	def step(self,state,action):
-		state_action = np.concatenate([state,np.expand_dims(action,1)],axis=1)
-		return np.apply_along_axis(self.step_f,1,state_action)
+        Parameters
+        ----------
+            state: list like [px,py,vx,vy]
+                px: x-coordinate position of agent
+                py: y-coordinate position of agent
+                vx: x-coordinate velocity of agent
+                vy: y-coordinate velocity of agent
+            action: int
+                action for agent to take in range 0-8 showing direction of velocity
+                +---+---+---+
+                | 0 | 1 | 2 |
+                +---+---+---+
+                | 3 | 4 | 5 |
+                +---+---+---+
+                | 6 | 7 | 8 |
+                +---+---+---+
 
-	def reward_f(self,state,action,nstate):
-		if action == 4 and state[2] == 0 and state[3] == 0: return self.punishment
-		elif self.goal_reached(nstate): return self.goal_reward
-		elif self.failure(nstate): return self.punishment
-		else: return self.time_penalty
+        Returns
+        -------
+            tuple: (state,action,next_state,reward,done)
+                state: list like [px,py,vx,vy]
+                action: int
+                next_state: list like [px,py,vx,vy]
+                reward: float
+                done: Boolean, True for reaching an end state
 
-	def reward(self,states,actions,nstates):
-		return np.array([self.reward_f(s,a,ns) for (s,a,ns) in zip(states,actions,nstates)])
+        Notes
+        -----
+        Reached Goal if
+            1. Has reached a specified goal zone
+                and
+            2. Has a zero velocity on landing
+        Penalty Incurred if
+            1. Outside the boundaries of the environment
+                or
+            2. In one of the specified out of bounds zones
+                of
+            3. Agent has zero velocity and chose not to move
+        Done if
+            1. Goal Reached
+                or
+            2. Penalty Inccured
+        """
+        # Calc Next State
+        px0,py0,vx0,vy0 = state
+        ax = action % 3 - 1
+        ay = 1 - action // 3
+        vx1 = vx0 + ax
+        vy1 = vy0 + ay
+        px1 = px0 + vx1
+        py1 = py0 + vy1
+        next_state = [px1,py1,vx1,vy1]
 
-	def display(self):
-		sx,sy = self.size
-		box = np.ones(self.size)
-		for x in range(sx):
-			for y in range(sy):
-				if self.goal_reached((x,y,0,0)):
-					box[x,y] = .8
-				elif self.failure((x,y,0,0)):
-					box[x,y] = 0
+        # Calc Reward and Done
+        if ((px1,py1) in self.goalList and
+            vx1==0 and vy1==0):
+            reward = self.goal_reward
+            done = True
 
-		img = plt.imshow(box.T[::-1], extent = [0,self.size[0],0,self.size[1]])
-		img.set_cmap('hot')
-		plt.xlim(0,self.size[0])
-		plt.ylim(0,self.size[1])
-		return img
+        elif ((px1,py1) in self.outOfBoundsList or
+                (px1 < 0) or (self.size[0] <= px1) or
+                (py1 < 0) or (self.size[1] <= py1) or
+                (ax==0 and ay==0 and vx0==0 and vy0==0)):
+            reward = self.fail_penalty
+            done = True
+
+        else:
+            reward = self.time_penalty
+            done = False
+
+        return state,action,next_state,reward,done
+
+    def step_vec(self,states,actions):
+        """
+        Vectorized Version of Environment.step(state,action)
+
+        Parameters
+        ----------
+            states: 2D numpy array holding multiple states
+            action: 1D numpy array holding integer actions
+
+        Returns
+        -------
+            tuple: (states,actions,next_states,rewards,dones)
+                states: 2D numpy array holding multiple states
+                actions: 1D numpy array type int
+                next_states: 2D numpy array holding multiple states
+                rewards: 1D numpy array type float
+                dones: 1D numpy array type boolean
+        """
+
+        n = states.shape[0]
+
+        # Calculate Next States
+        ax = actions % 3 - 1
+        ay = 1 - actions // 3
+        vx = states[:,2] + ax
+        vy = states[:,3] + ay
+        px = states[:,0] + vx
+        py = states[:,1] + vy
+
+        next_states =  np.vstack([px,py,vx,vy]).T
+
+        # Goal Reached
+        gr = np.zeros(n).astype(bool)
+        for (x,y) in self.goalList: gr |= (px == x) & (py == y)
+        goal_reached = (gr&(vx==0)&(vy==0)).astype(bool)
+
+        # Failure
+        oob = np.zeros(n).astype(bool)
+        for (x,y) in self.outOfBoundsList: oob |= (px == x) & (py == y)
+        oobx = (px < 0) | (self.size[0] <= px)
+        ooby = (py < 0) | (self.size[1] <= py)
+        not_moving = (actions == 4) & (states[:,2] == 0) & (states[:,3] == 0)
+        fail = (oob|oobx|ooby|not_moving).astype(bool)
+
+        # Calculate Rewards
+        rewards = np.ones(n)*self.time_penalty
+        rewards[goal_reached.astype(bool)] = self.goal_reward
+        rewards[fail.astype(bool)] = self.fail_penalty
+
+        # Calculate Dones
+        dones = goal_reached|fail
+
+        return states,actions,next_states,rewards,dones
