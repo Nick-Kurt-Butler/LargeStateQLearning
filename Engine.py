@@ -133,7 +133,7 @@ class Engine:
         return metrics
 
 
-    def train_vec(self, batch_size, trials):
+    def train_vec(self, batch_size, trials, explore_prob):
         """
         Train Neural Net on Random Runs to maximize exploration
 
@@ -141,6 +141,7 @@ class Engine:
         ----------
             batch_size: Size of each batch in the NN
             trials: Number of trials such that batch_size x trials = training points
+            explore_prob: The probability of the agent choosing a random move
 
         Returns
         -------
@@ -162,6 +163,10 @@ class Engine:
             probs = np.zeros([batch_size,9])
             actions = np.random.randint(9,size=batch_size)
             probs[np.arange(batch_size),actions] = 1
+            mask = np.random.choice([True,False],p=[1-explore_prob,explore_prob],size=batch_size)
+            probsA,actionsA = self.Agent.get_action_probs(states[mask])
+            probs[mask] = probsA
+            actions[mask] = actionsA
             _,_,next_states,rewards,dones = self.Env.step_vec(states,actions)
 
             # Update NN and metrics
