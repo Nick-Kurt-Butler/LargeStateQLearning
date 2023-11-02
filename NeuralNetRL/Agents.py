@@ -34,6 +34,7 @@ class Critic(tf.keras.Model):
 # Class to train and soft update Actor and Critic Networks
 class DDPGAgent:
     def __init__(self, action_dim, tau=0.0001, gamma = .99):
+        self.action_dim = action_dim
         self.actor = Actor(action_dim)
         self.target_actor = Actor(action_dim)
         self.critic = Critic()

@@ -36,11 +36,17 @@ class Environment:
 
     def valid_states(self):
         """
-        Find all potential starting states in environment
+        Find all potential states in environment
         """
-        pos = [[x,y] for x in range(self.size[0]) for y in range(self.size[1]) if (x,y) not in self.outOfBoundsList+self.goalList]
-        vel = np.zeros([len(pos),1])
-        return np.concatenate([pos,vel,vel],axis=1)
+        states = []
+        for px in range(self.size[0]):
+            for py in range(self.size[1]):
+                if (px,py) not in self.goalList and (px,py) not in self.outOfBoundsList:
+                    for vx in range(-self.size[0],self.size[0]):
+                        for vy in range(-self.size[1],self.size[1]):
+                            states.append([px,py,vx,vy])
+
+        return np.array(states)
 
     def step(self,state,action):
         """
@@ -152,14 +158,14 @@ class Environment:
         # Goal Reached
         gr = np.zeros(n).astype(bool)
         for (x,y) in self.goalList: gr |= (px == x) & (py == y)
-        goal_reached = (gr&(vx==0)&(vy==0)).astype(bool)
+        goal_reached = (gr&(np.abs(vx)<=1)&(np.abs(vy)<=1)).astype(bool)
 
         # Failure
         oob = np.zeros(n).astype(bool)
         for (x,y) in self.outOfBoundsList: oob |= (px == x) & (py == y)
         oobx = (px < 0) | (self.size[0] <= px)
         ooby = (py < 0) | (self.size[1] <= py)
-        not_moving = (actions == 4) & (states[:,2] == 0) & (states[:,3] == 0)
+        not_moving = (ax==0) & (ay==0) & (vx == 0) & (vy == 0)
         fail = (oob|oobx|ooby|not_moving).astype(bool)
 
         # Calculate Rewards
