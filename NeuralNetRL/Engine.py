@@ -1,12 +1,14 @@
 import numpy as np
 import tensorflow as tf
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation,PillowWriter
 
 class Engine:
     def __init__(self,Env,Agent):
         self.Env = Env
         self.Agent = Agent
 
-    def run(self,init_state, explore_prob, limit = 1000):
+    def run(self,init_state, explore_prob, limit = 20):
         """
         Run a simulation through the environment
 
@@ -26,7 +28,7 @@ class Engine:
             dones: Boolean array
         """
         # Initialize data arrays
-        states,actions,next_states,rewards,dones = ([],[],[],[],[])
+        states,actions = ([init_state],[])
         state = init_state
         done = False
 
@@ -37,24 +39,18 @@ class Engine:
             else: action = int(self.Agent.get_action([state]))
 
             # Step
+            _,_,state,_,done = self.Env.step(state,action)
             states.append(state)
             actions.append(action)
-            _,_,state,reward,done = self.Env.step(state,action)
-            next_states.append(state)
-            rewards.append(reward)
-            dones.append(done)
 
             # Infinite Loop check
             if limit == 0: break
             limit -= 1
 
-        states.append(state)
         states = np.array(states)
         actions = np.array(actions)
-        rewards = np.array(rewards)
-        dones = np.array(dones)
-
-        return states, actions, rewards, dones
+        
+        return states, actions
 
     def train(self,explore_prob, limit = 1000, batch_size = 1000, trials = 10):
         """
@@ -178,3 +174,22 @@ class Engine:
                 file.write(f"Epoch: {t}, Avg Reward:{round(np.sum(rewards)/(np.sum(dones)+1),2)}, Actor Loss:{al}, Critic Loss:{cl}\n")
 
         return metrics
+
+    def display_run(self,state,explore_prob=0):
+
+        fig,ax = plt.subplots()
+        im = self.Env.display()
+        states,actions = self.run(state,explore_prob=explore_prob)
+        offset_states = np.concatenate([states[:-1,:2],states[1:,-2:]],axis=1)
+
+        def animate(i):
+            if i == 0:
+                point, = ax.plot(state[0],state[1])
+                return im,point
+            else:
+                px,py,vx,vy = offset_states[i-1]
+                arrow = ax.arrow(px+.5,py+.5,vx,vy,head_width=.3,length_includes_head=True,color = 'blue')
+                return im,arrow
+
+        ani = FuncAnimation(fig, animate, interval=500, blit=True, repeat=True, frames=len(states))
+        ani.save("run.gif", dpi=300, writer=PillowWriter(fps=3))

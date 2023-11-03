@@ -107,7 +107,7 @@ class Environment:
 
         # Calc Reward and Done
         if ((px1,py1) in self.goalList and
-            vx1==0 and vy1==0):
+            abs(vx1)<=1 and abs(vy1)<=1):
             reward = self.goal_reward
             done = True
 

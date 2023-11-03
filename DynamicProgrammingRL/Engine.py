@@ -1,5 +1,6 @@
 import numpy as np
-import tensorflow as tf
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation,PillowWriter
 
 class Engine:
     def __init__(self,Env):
@@ -61,3 +62,22 @@ class Engine:
                               right_index=True,how="left").Q.fillna(self.Env.fail_penalty)
             self.Env.df.Q = self.Env.df.REWARD + gamma*Qmax*(1-self.Env.df.TERMINAL)
             print(f"Iteration:{i}, Avg Q-val:{self.Env.df.Q.mean()}")
+
+    def display_run(self,state):
+
+        fig,ax = plt.subplots()
+        im = self.Env.display()
+        states,actions = self.run(state)
+        offset_states = np.concatenate([states[:-1,:2],states[1:,-2:]],axis=1)
+
+        def animate(i):
+            if i == 0:
+                point, = ax.plot(state[0],state[1])
+                return im,point
+            else:
+                px,py,vx,vy = offset_states[i-1]
+                arrow = ax.arrow(px+.5,py+.5,vx,vy,head_width=.3,length_includes_head=True,color = 'blue')
+                return im,arrow
+
+        ani = FuncAnimation(fig, animate, interval=500, blit=True, repeat=True, frames=len(states))
+        ani.save("run.gif", dpi=300, writer=PillowWriter(fps=3))

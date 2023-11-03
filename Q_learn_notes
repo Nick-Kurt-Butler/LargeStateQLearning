@@ -30,3 +30,32 @@ Second update the actor class based on the loss of the Critic class update
 
 Step 4:
 Use the soft update function which supposedly statabilizes training.
+
+
+This is a reinforment learning project
+
+three types of methods to solve the problems
+1. Neural Net which is actual crap
+2. Dynamic Programing Method on local machie
+3. Dynamic Programming Method on Snowflake
+
+
+
+Neural Net
+- Explaination
+- Graphs of training
+- Result on small data set
+- Short comings
+
+Dynamic Programming in Python
+- Explaination
+- graphics
+- result
+- discussion
+
+Dynamic Programming in Snowflake
+- Explanation
+- Graphs
+- result
+- discussion
+- Streamlit?

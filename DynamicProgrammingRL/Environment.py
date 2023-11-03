@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import itertools
 
+
 class Environment:
     def __init__(self,size, goal_reward, fail_penalty, time_penalty, outOfBoundsList, goalList):
         self.size = size # size of the map in length units
@@ -15,6 +16,8 @@ class Environment:
 
     def init_Q(self):
 
+        np.seterr(divide='ignore',invalid='ignore'
+)
         sx,sy = self.size
 
         state_actions = np.array(list(itertools.product(*[
@@ -30,6 +33,8 @@ class Environment:
 
         states = state_actions[:,:4]
         actions = state_actions[:,-2:]
+        px0 = states[:,0]
+        py0 = states[:,1]
         del state_actions
 
         # Calculate Next States
@@ -37,8 +42,8 @@ class Environment:
         ay = actions[:,1]
         vx = states[:,2] + ax
         vy = states[:,3] + ay
-        px = states[:,0] + vx
-        py = states[:,1] + vy
+        px = px0 + vx
+        py = py0 + vy
 
         next_states =  np.vstack([px,py,vx,vy]).T
 
@@ -49,7 +54,15 @@ class Environment:
 
         # Failure
         oob = np.zeros(n).astype(bool)
-        for (x,y) in self.outOfBoundsList: oob |= (px == x) & (py == y)
+        m = (py0-py)/(px0-px)
+        for (x,y) in self.outOfBoundsList:
+            a = m*(x-.5-px)+py
+            b = m*(x+.5-px)+py
+            oob |= (px == x) & (py == y)
+            #x_in_between = ((np.min(np.array([px0,px]),axis=0)<=x) & (x<=np.max(np.array([px0,px]),axis=0)))
+            #y_in_between = ((np.min(np.array([py0,py]),axis=0)<=y) & (y<=np.max(np.array([py0,py]),axis=0)))
+            #oob |= ~(((a<=y-.5) & (b<=y-.5)) | ((y+.5<=a) & (y+.5<=b))) & x_in_between & y_in_between
+
         oobx = (px < 0) | (sx <= px)
         ooby = (py < 0) | (sy <= py)
         not_moving = (ax == 0) & (ay == 0) & (vx == 0) & (vy == 0)
