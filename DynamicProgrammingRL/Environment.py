@@ -59,9 +59,9 @@ class Environment:
             a = m*(x-.5-px)+py
             b = m*(x+.5-px)+py
             oob |= (px == x) & (py == y)
-            #x_in_between = ((np.min(np.array([px0,px]),axis=0)<=x) & (x<=np.max(np.array([px0,px]),axis=0)))
-            #y_in_between = ((np.min(np.array([py0,py]),axis=0)<=y) & (y<=np.max(np.array([py0,py]),axis=0)))
-            #oob |= ~(((a<=y-.5) & (b<=y-.5)) | ((y+.5<=a) & (y+.5<=b))) & x_in_between & y_in_between
+            x_in_between = ((np.min(np.array([px0,px]),axis=0)<=x) & (x<=np.max(np.array([px0,px]),axis=0)))
+            y_in_between = ((np.min(np.array([py0,py]),axis=0)<=y) & (y<=np.max(np.array([py0,py]),axis=0)))
+            oob |= ~(((a<=y-.5) & (b<=y-.5)) | ((y+.5<=a) & (y+.5<=b))) & x_in_between & y_in_between
 
         oobx = (px < 0) | (sx <= px)
         ooby = (py < 0) | (sy <= py)

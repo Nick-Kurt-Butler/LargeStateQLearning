@@ -1,4 +1,5 @@
 import tensorflow as tf
+import numpy as np
 
 # Define the actor network
 class Actor(tf.keras.Model):
