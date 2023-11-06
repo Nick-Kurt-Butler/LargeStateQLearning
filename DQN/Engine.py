@@ -162,6 +162,51 @@ class Engine:
 
         return metrics
 
+    def train_dynamic(self, trials):
+        """
+        Train Neural Net on Random Runs to maximize exploration
+
+        Parameters
+        ----------
+            batch_size: Size of each batch in the NN
+            trials: Number of trials such that batch_size x trials = training points
+            epsilon: The probability of the agent choosing a random move
+
+        Returns
+        -------
+        A dictionary holding three arrays
+            reward: array holding the reward of each state-action pair
+            actor_loss: array holding the total loss of each epoch for the actor NN
+            critic_loss: array holding the total loss of each epoch for the critic NN
+        """
+        # Initialize metrics
+        with open("train_vec_NN.txt","w") as file: file.write("")
+        metrics = {'loss':[],'Q_model':[],'Q_update':[]}
+        df = self.Env.df.sort_values(["STATE_0","ACTION"])[["STATE_0","STATE_1","REWARD","TERMINAL"]].groupby("STATE_0").aggregate(list)
+        states = np.array(df.index.map(list).tolist())
+        n = len(states)
+        next_states = np.array(df.STATE_1.tolist())
+        #next_states = next_states.reshape(n*9,4)
+        rewards  = np.array(df.REWARD.tolist())
+        terminal = np.array(df.TERMINAL.tolist())
+
+        index = np.array(range(n))
+
+        MIN = self.Env.fail_penalty
+        MAX = self.Env.goal_reward
+
+        # Main loop to create each batch
+        for t in range(trials):
+            np.random.shuffle(index)
+            loss,Q_model,Q_update = self.Agent.update_all(states[index], next_states[index], rewards[index], terminal[index],MIN,MAX)
+            metrics['loss'].append(loss)
+            metrics['Q_model'].append(Q_model)
+            metrics['Q_update'].append(Q_update)
+            with open("train_vec_NN.txt","a") as file:
+                file.write(f"Epoch: {t}, Loss:{loss}, Q_model:{Q_model}, Q_update:{Q_update}\n")
+
+        return metrics
+
     def display_run(self,state,epsilon=0):
 
         fig,ax = plt.subplots()

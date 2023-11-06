@@ -16,8 +16,7 @@ class Environment:
 
     def init_Q(self):
 
-        np.seterr(divide='ignore',invalid='ignore'
-)
+        np.seterr(divide='ignore',invalid='ignore')
         sx,sy = self.size
 
         state_actions = np.array(list(itertools.product(*[
