@@ -1,0 +1,30 @@
+# Set up Table
+Create Pandas DataFrame and Write to Table
+
+# Create iterative loop from SQL Updating only Qmax
+Find Max  for each (S,A) pair
+
+WITH T1 AS (
+    SELECT S' FROM T
+),
+T2 AS (
+    SELECT S, MAX(Q) AS Qmax
+    FROM T
+    GROUP BY S
+),
+T3 AS (
+    SELECT S, Qmax
+    FROM T1
+    LEFT JOIN T2
+    ON T1.S' = T2.S
+)
+UPDATE T
+SET Q = Qmax
+WHERE T.S = T3.S
+
+# Create function to give path based on initial position
+def f(init):
+    path = [init]
+    while not done:
+        path.append(next_step)
+    return path

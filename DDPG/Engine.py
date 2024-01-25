@@ -52,9 +52,10 @@ class Engine:
 
         return states, actions
 
-    def train(self,epsilon, limit = 1000, batch_size = 1000, trials = 10):
+    def train(self,epsilon, limit = 1000, batch_size = 1000, trials = 10, fileName = "train_metrics.csv"):
         """
         Train Neural Net on Linear Runs
+        Writes training metrics to file
 
         Parameters
         ----------
@@ -62,16 +63,10 @@ class Engine:
             limit = 1000: The limit of steps the agent can take to prevent infinite loop
             batch_size: Size of each batch in the NN
             trials: Number of trials such that batch_size x trials = training points
-        Returns
-        -------
-            A dictionary holding three arrays
-
-            reward: array holding the reward of each state-action pair
-            actor_loss: array holding the total loss of each epoch for the actor NN
-            critic_loss: array holding the total loss of each epoch for the critic NN
+            fileName: file to write metrics
         """
         # Initialize Metrics
-        with open("train_NN.txt","w") as file: file.write("")
+        with open(fileName,"w") as file: file.write("Epoch,Reward,Actor_Loss,Critic_Loss")
         metrics = {'reward':[],'actor_loss':[],'critic_loss':[]}
         lim = limit
         init_states = self.Env.valid_states()
@@ -123,32 +118,22 @@ class Engine:
             metrics['actor_loss'].append(al)
             metrics['critic_loss'].append(cl)
             # Write progress to file
-            with open("train_NN.txt","a") as file:
-                file.write(f"Epoch: {t}, Avg Reward:{round(np.sum(rewards)/(np.sum(dones)+1),2)}, Actor Loss:{al}, Critic Loss:{cl}\n")
+            with open(fileName,"a") as file: file.write(f"{t},{np.sum(rewards)/(np.sum(dones)+1)},{al},{cl}\n")
 
-        return metrics
-
-
-    def train_vec(self, batch_size, trials, epsilon):
+    def train_vec(self, batch_size, trials, epsilon, fileName = "train_vec_metrics.csv"):
         """
         Train Neural Net on Random Runs to maximize exploration
+        Writes training metrics to file
 
         Parameters
         ----------
             batch_size: Size of each batch in the NN
             trials: Number of trials such that batch_size x trials = training points
             epsilon: The probability of the agent choosing a random move
-
-        Returns
-        -------
-        A dictionary holding three arrays
-            reward: array holding the reward of each state-action pair
-            actor_loss: array holding the total loss of each epoch for the actor NN
-            critic_loss: array holding the total loss of each epoch for the critic NN
+            fileName: file to write metrics
         """
         # Initialize metrics
-        with open("train_vec_NN.txt","w") as file: file.write("")
-        metrics = {'reward':[],'actor_loss':[],'critic_loss':[]}
+        with open(fileName,"w") as file: file.write("Epoch,Reward,Actor_Loss,Critic_Loss\n")
         init_states = self.Env.valid_states()
         num_states = len(init_states)
 
@@ -167,13 +152,7 @@ class Engine:
 
             # Update NN and metrics
             al,cl = self.Agent.update(states, probs, next_states, rewards, dones)
-            metrics['reward'].append(np.sum(rewards)/(np.sum(dones)+1))
-            metrics['actor_loss'].append(al)
-            metrics['critic_loss'].append(cl)
-            with open("train_vec_NN.txt","a") as file:
-                file.write(f"Epoch: {t}, Avg Reward:{round(np.sum(rewards)/(np.sum(dones)+1),2)}, Actor Loss:{al}, Critic Loss:{cl}\n")
-
-        return metrics
+            with open(fileName,"a") as file: file.write(f"{t},{np.sum(rewards)/(np.sum(dones)+1)},{al},{cl}\n")
 
     def display_run(self,state,epsilon=0):
 

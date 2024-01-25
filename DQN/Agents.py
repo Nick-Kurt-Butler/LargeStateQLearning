@@ -18,7 +18,7 @@ class DQNAgent:
         return model
 
     def get_action(self, states):
-        return np.argmax(self.model.predict(states),axis=1)
+        return np.argmax(self.model.predict(states,verbose=None),axis=1)
 
     def update(self,states,actions,next_states,rewards,dones,MIN,MAX):
         """
@@ -62,6 +62,6 @@ class DQNAgent:
         n = len(states)
         Qmax = np.max(self.model(next_states.reshape(9*n,4)),axis=1).reshape(n,9)
         Q = rewards + self.gamma * Qmax * (1-dones)
-        Q[Q>MAX] = MAX
+        Q[Q>MAX] = MAX*.5
         Q[Q<MIN] = MIN
-        return self.model.train_on_batch(states,Q),np.sum(Qmax),np.sum(Q)
+        return self.model.train_on_batch(states,Q),np.mean(Qmax),np.mean(Q)
